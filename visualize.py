@@ -1,14 +1,12 @@
-import librosa, librosa.display
+#import librosa, librosa.display
 from visualize_mel import plot_spectrogram
-#from peak_extraction import extract_peaks
 from scipy.io import wavfile
 import scipy.signal as signal
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-initialize = True
+initialize = False
 
 def make_directories(dir_name):
     os.mkdir(dir_name)
@@ -37,8 +35,10 @@ def addBlankNoise(inputFile, outputFile, noise_level = 0, windowSize = 5.0):
     # Read the input wav file
     sample_rate, data = wavfile.read(inputFile)
     # Generate random noise
-   # length = len(data)
-    length = 50000 # 5 seconds I am not sure I am confused about the units
+    # length = len(data)
+    length = int((windowSize/2)*sample_rate) # 5 seconds I am not sure I am confused about the units
+    ###I think that length is just the number of samples, so time elapsed would be length/sample rate, 2.5 seconds will be 2.5 * SR
+    ###Are we sure that we want noise vs just adding silence?
     noise = np.random.normal(0, noise_level, length)
     # Add noise to the original data
     noisyData = np.concatenate((noise, data, noise))
@@ -60,6 +60,9 @@ def addBlankNoise(inputFile, outputFile, noise_level = 0, windowSize = 5.0):
     # Idea is:
     # start index ... 2.5 sec ... max audio recording ... 2.5 sec ... end index
     # getting negative number from the starting index maybe not enough time is being added
+
+    ###Sample rate is like how much time goes by in between each value in the audio file, so it looks good below
+    ###Difference in indexes would be seconds*sample rate, eg if the SR is two samples a second 2.5 seconds of audio would be 5 samples
 
     difference = int(sample_rate * halfWindow)
     startIndex = int(peakIndex - difference)
@@ -84,6 +87,9 @@ for audioFile in os.listdir(audioFolderPath):
 for noisyAudioFile in os.listdir(noisyFolderPath):
     sample_rate, samples = wavfile.read(noisyFolderPath + noisyAudioFile)
     frequencies, times, spectrogram = signal.spectrogram(samples, sample_rate)
+    ###Plot as Mel Spectrogram, uses Librosa Module
+    ###libSignal, sr = librosa.load(noisyFolderPath + noisyAudioFile)
+    ###plot_spectrogram(libSignal, sr)
 
     plt.pcolormesh(times, frequencies, spectrogram)
     plt.imshow(spectrogram)
