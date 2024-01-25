@@ -1,5 +1,6 @@
-#import librosa, librosa.display
+import librosa, librosa.display
 from visualize_mel import plot_spectrogram
+from visualize_mfcc import plot_mfcc
 from scipy.io import wavfile
 import scipy.signal as signal
 import os
@@ -88,8 +89,8 @@ for noisyAudioFile in os.listdir(noisyFolderPath):
     sample_rate, samples = wavfile.read(noisyFolderPath + noisyAudioFile)
     frequencies, times, spectrogram = signal.spectrogram(samples, sample_rate)
     ###Plot as Mel Spectrogram, uses Librosa Module
-    ###libSignal, sr = librosa.load(noisyFolderPath + noisyAudioFile)
-    ###plot_spectrogram(libSignal, sr)
+    libSignal, sr = librosa.load(noisyFolderPath + noisyAudioFile)
+    plot_spectrogram(libSignal, sr)
 
     plt.pcolormesh(times, frequencies, spectrogram)
     plt.imshow(spectrogram)
@@ -100,6 +101,10 @@ for noisyAudioFile in os.listdir(noisyFolderPath):
 
     plt.savefig(spectoFolderPath + file_name + '_spectogram.png')
     plt.show()
+
+    # plot mfcc's
+    plot_mfcc(noisyFolderPath + noisyAudioFile)
+
 
 for cutnoisyAudioFile in os.listdir(cutnoisyFolderPath):
     sample_rate, samples = wavfile.read(cutnoisyFolderPath + cutnoisyAudioFile)
