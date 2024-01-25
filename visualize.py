@@ -1,4 +1,5 @@
-#import librosa, librosa.display
+import librosa, librosa.display
+from pydub import AudioSegment
 from visualize_mel import plot_spectrogram
 from scipy.io import wavfile
 import scipy.signal as signal
@@ -24,7 +25,9 @@ if initialize:
     make_directories("data/audioData/validate")
     make_directories("data/audioData/train")
 
-audioFolderPath = "./watkinsSpottedSeal/1971/"
+# audio_folder = "./watkinsSpottedSeal/1971/"
+audio_folder = "./WatkinsOrca/"
+segmented_folder = "./data/segmentedData"
 spectoFolderPath ="./data/spectogramData/"
 noisyFolderPath ="./data/audioData/addedNoise/"
 cutnoisyFolderPath = "./data/audioData/cutFiles/"
@@ -79,17 +82,47 @@ def addBlankNoise(inputFile, outputFile, noise_level = 0, windowSize = 5.0):
     wavfile.write(noisyFolderPath + outputFile, sample_rate, noisyData.astype(np.int16))
 
 
+def segmentAudio(input_file, output_folder, file_name, segment_length = 5000):
+    # read the input audio wav file
+    audio = AudioSegment.from_file(input_file, format="wav")
+
+    # Calculate the number of segments
+    num_segments = len(audio) // segment_length
+
+    if num_segments == 0:
+        raise ValueError("ERROR: Audio file is smaller that desired segment")
+
+    # Create the output folder if it doesn't exist
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    # Split the audio into segments and save each segment
+    # starts at 0 for i
+    for i in range(num_segments):
+        start_time = i * segment_length
+        end_time = (i + 1) * segment_length
+        segment = audio[start_time:end_time]
+        segment.export(os.path.join(output_folder, file_name + f"segment_{i + 1}.wav"), format="wav")
+
+
 # loop through and add blank noise to original audio files
-for audioFile in os.listdir(audioFolderPath):
-    addBlankNoise(audioFolderPath + audioFile, "noiseAdded" + audioFile, 0)
+for audio_file in os.listdir(audio_folder):
+    file_name, type = audio_file.split(".")
+    # addBlankNoise(audio_folder + audio_file, "noiseAdded" + audio_file, 0)
+
+    try:
+        segmentAudio(audio_folder + audio_file, segmented_folder, file_name)
+        print("Audio file successfully split into 5-second segments.")
+    except ValueError as e:
+        print(f"Error: {e}")
 
 # loop through and create and save spectrogram for each audio file
 for noisyAudioFile in os.listdir(noisyFolderPath):
     sample_rate, samples = wavfile.read(noisyFolderPath + noisyAudioFile)
     frequencies, times, spectrogram = signal.spectrogram(samples, sample_rate)
     ###Plot as Mel Spectrogram, uses Librosa Module
-    ###libSignal, sr = librosa.load(noisyFolderPath + noisyAudioFile)
-    ###plot_spectrogram(libSignal, sr)
+    libSignal, sr = librosa.load(noisyFolderPath + noisyAudioFile)
+    plot_spectrogram(libSignal, sr)
 
     plt.pcolormesh(times, frequencies, spectrogram)
     plt.imshow(spectrogram)
@@ -100,6 +133,7 @@ for noisyAudioFile in os.listdir(noisyFolderPath):
 
     plt.savefig(spectoFolderPath + file_name + '_spectogram.png')
     plt.show()
+
 
 for cutnoisyAudioFile in os.listdir(cutnoisyFolderPath):
     sample_rate, samples = wavfile.read(cutnoisyFolderPath + cutnoisyAudioFile)
