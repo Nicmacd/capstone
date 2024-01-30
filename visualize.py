@@ -1,6 +1,7 @@
 import librosa, librosa.display
 from pydub import AudioSegment
 from visualize_mel import plot_spectrogram
+from visualize_mfcc import plot_mfcc
 from scipy.io import wavfile
 import scipy.signal as signal
 import os
@@ -134,6 +135,8 @@ for noisyAudioFile in os.listdir(noisyFolderPath):
     plt.savefig(spectoFolderPath + file_name + '_spectogram.png')
     plt.show()
 
+    # plot mfcc's
+    plot_mfcc(noisyFolderPath + noisyAudioFile)
 
 for cutnoisyAudioFile in os.listdir(cutnoisyFolderPath):
     sample_rate, samples = wavfile.read(cutnoisyFolderPath + cutnoisyAudioFile)
