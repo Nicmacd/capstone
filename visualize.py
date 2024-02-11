@@ -8,7 +8,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-initialize = False
+initialize = True
 
 def make_directories(dir_name):
     os.mkdir(dir_name)
@@ -27,7 +27,7 @@ if initialize:
     make_directories("data/audioData/train")
 
 # audio_folder = "./watkinsSpottedSeal/1971/"
-audio_folder = "./WatkinsOrca/"
+audio_folder = "orca"
 segmented_folder = "./data/segmentedData"
 spectoFolderPath ="./data/spectogramData/"
 noisyFolderPath ="./data/audioData/addedNoise/"
@@ -83,9 +83,9 @@ def addBlankNoise(inputFile, outputFile, noise_level = 0, windowSize = 5.0):
     wavfile.write(noisyFolderPath + outputFile, sample_rate, noisyData.astype(np.int16))
 
 
-def segmentAudio(input_file, output_folder, file_name, segment_length = 5000):
+def segmentAudio(input_file, output_folder, file_name, segment_length = 2000):
     # read the input audio wav file
-    audio = AudioSegment.from_file(input_file, format="wav")
+    audio = AudioSegment.from_file(f'{audio_folder}/{input_file}', format="wav")
 
     # Calculate the number of segments
     num_segments = len(audio) // segment_length
@@ -112,7 +112,7 @@ for audio_file in os.listdir(audio_folder):
     # addBlankNoise(audio_folder + audio_file, "noiseAdded" + audio_file, 0)
 
     try:
-        segmentAudio(audio_folder + audio_file, segmented_folder, file_name)
+        segmentAudio(audio_file, segmented_folder, file_name)
         print("Audio file successfully split into 5-second segments.")
     except ValueError as e:
         print(f"Error: {e}")
