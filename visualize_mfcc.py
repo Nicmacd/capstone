@@ -4,7 +4,7 @@ import librosa.display
 import matplotlib.pyplot as plt
 import numpy as np
 
-def plot_mfcc(source_folder, audio_file, destination_folder):
+def create_mfcc(source_folder, audio_file, destination_folder):
     # load audio file
     signal, sr = librosa.load(source_folder + audio_file)
     #num_samples = signal.shape
@@ -19,9 +19,10 @@ def plot_mfcc(source_folder, audio_file, destination_folder):
     librosa.display.specshow(mfccs, x_axis='time', sr=sr)
     plt.colorbar(format='%+2f')
 
+    file_name, file_type = audio_file.split(".")
     # make it so that you are only getting the "image" section do not what to feed extra information into the model
     plt.axis('off')
     plt.tight_layout()
-    plt.savefig(destination_folder + audio_file + '_spectogram.png', bbox_inches='tight', pad_inches=0.1)
+    plt.savefig(destination_folder + file_name + '_mfcc.png', bbox_inches='tight', pad_inches=0.1)
     plt.show()
 
