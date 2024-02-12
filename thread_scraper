@@ -1,0 +1,54 @@
+import requests
+from bs4 import BeautifulSoup
+import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
+def download_file(session, download_url, folder_name, file_name):
+    with session.get(download_url, stream=True) as r:
+        r.raise_for_status()
+        with open(file_name, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+    print(f'Downloaded {file_name}')
+
+def download_files(common_names, years, base_folder_name):
+    if not os.path.exists(base_folder_name):
+        os.makedirs(base_folder_name)
+
+    with requests.Session() as session:
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            future_to_url = {}
+            counter = 1
+
+            for common_name in common_names:
+                for year in years:
+                    url = f'https://whoicf2.whoi.edu/science/B/whalesounds/fullCuts.cfm?SP={common_name}&YR={year}'
+                    response = session.get(url)
+                    soup = BeautifulSoup(response.content, 'html.parser')
+                    links = soup.find_all('a', text='Download')
+
+                    for link in links:
+                        partial_url = link.get('href')
+                        download_url = f'https://whoicf2.whoi.edu/{partial_url}'
+                        # Include common name in file name for differentiation
+                        file_name = os.path.join(base_folder_name, f"{base_folder_name}_{counter:03d}_{common_name}_{year}.wav")
+                        future = executor.submit(download_file, session, download_url, base_folder_name, file_name)
+                        future_to_url[future] = download_url
+                        counter += 1
+
+            for future in as_completed(future_to_url):
+                url = future_to_url[future]
+                try:
+                    future.result()
+                except Exception as exc:
+                    print(f'{url} generated an exception: {exc}')
+
+# Dolphins
+# common_names = ['BD15F', 'BD19D', 'BG2A', 'BD15B', 'BD1A', 'BD3B', 'BD6H', 'BD5A', 'BD4A', 'BD1C', 'BD12A', 'BD3A',
+#                 'BD15A', 'BD17A', 'BD15L', 'BD15C', 'BD12B', 'BD6B', 'BD6A']  # List of common names to iterate over
+common_names = ['BE7A'] #Orca
+years = [51, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 68, 69, 70, 71, 72, 75, 78, 79,
+         81, 83, 84, 85, 87, 89, 90, 91, 92, 93, 94, 97]
+base_folder_name = 'orca1'
+
+download_files(common_names, years, base_folder_name)
