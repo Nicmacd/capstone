@@ -25,6 +25,6 @@ def download_files(url, folder_name):
 
 # URL of the webpage and folder name
 url = 'https://whoicf2.whoi.edu/science/B/whalesounds/fullCuts.cfm?SP=BE7A&YR=97'
-folder_name = 'orca'
+folder_name = 'orca_temp'
 
 download_files(url, folder_name)
