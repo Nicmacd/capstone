@@ -31,7 +31,8 @@ def download_files(common_names, years, base_folder_name):
                         partial_url = link.get('href')
                         download_url = f'https://whoicf2.whoi.edu/{partial_url}'
                         # Include common name in file name for differentiation
-                        file_name = os.path.join(base_folder_name, f"{base_folder_name}_{counter:03d}_{common_name}_{year}.wav")
+                        # file_name = os.path.join(base_folder_name, f"{base_folder_name}_{counter:03d}_{common_name}_{year}.wav")
+                        file_name = os.path.join(base_folder_name, f"{base_folder_name}_{counter:03d}.wav")
                         future = executor.submit(download_file, session, download_url, base_folder_name, file_name)
                         future_to_url[future] = download_url
                         counter += 1
