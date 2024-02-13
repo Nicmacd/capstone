@@ -22,4 +22,5 @@ def plot_spectrogram(destination_folder, audio_file, signal, sr, n_fft = 2048, h
     plt.axis('off')
     plt.tight_layout()
     plt.savefig(destination_folder + file_name + '_mel.png', bbox_inches='tight', pad_inches=0.1)
-    plt.show()
+    # plt.show()
+    plt.close()

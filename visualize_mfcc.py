@@ -23,5 +23,6 @@ def create_mfcc(source_folder, audio_file, destination_folder):
     plt.axis('off')
     plt.tight_layout()
     plt.savefig(destination_folder + file_name + '_mfcc.png', bbox_inches='tight', pad_inches=0.1)
-    plt.show()
+    # plt.show()
+    plt.close()
 
