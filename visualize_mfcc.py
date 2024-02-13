@@ -10,7 +10,6 @@ def create_mfcc(source_folder, audio_file, destination_folder):
     #num_samples = signal.shape
 
     # extract mfcc's
-
     mfccs = librosa.feature.mfcc(y=signal, sr=sr)
     #num_mfcc = mfcc.shape
 

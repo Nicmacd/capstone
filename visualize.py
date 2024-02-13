@@ -25,6 +25,10 @@ if initialize:
     make_directories("data/mfccData/test")
     make_directories("data/mfccData/validate")
     make_directories("data/mfccData/train")
+    make_directories("data/mfccData/test/images")
+    make_directories("data/mfccData/test/labels")
+    make_directories("data/mfccData/train/images")
+    make_directories("data/mfccData/train/labels")
     make_directories("data/audioData")
     make_directories("data/audioData/segmentedFiles")
     make_directories("data/audioData/test")
@@ -42,10 +46,13 @@ spectoFolderPath = "./data/spectogramData/"
 train_folder = "./data/audioData/train/"
 test_folder = "./data/audioData/test/"
 mfcc_folder = "./data/mfccData/"
-mfcc_train_folder = "./data/mfccData/train/"
-mfcc_test_folder = "./data/mfccData/test/"
+mfcc_train_imgs_folder = "./data/mfccData/train/images/"
+mfcc_train_lbls_folder = "./data/mfccData/train/labels/"
+mfcc_test_imgs_folder = "./data/mfccData/test/images/"
+mfcc_test_lbls_folder = "./data/mfccData/test/labels/"
 mel_train_folder = "./data/melData/train/"
 mel_test_folder = "./data/melData/test/"
+
 # noisyFolderPath ="./data/audioData/addedNoise/"
 # cutnoisyFolderPath = "./data/audioData/cutFiles/"
 # filePath = "C:/Users/conbo/PycharmProjects/capstone/capstone/audioData/watkinsSpottedSeal/1971/SpottedSeal_0006.wav"
@@ -91,6 +98,20 @@ def create_spectogram(folderPath, audioFile, destination_path, data_type):
     plt.savefig(spectoFolderPath + data_type + file_name + '_spectogram.png', bbox_inches='tight', pad_inches=0.1)
     plt.show()
 
+def create_labels(data_dir, label_dir):
+
+    for name in os.listdir(data_dir):
+        name.split(".", 1)
+        #txtfile_name = os.path.splitext(file_name)[0]
+        txtfile = os.path.join(label_dir, name + '.txt')
+
+        contents, excess = name.split("_", 1)
+
+        with open(txtfile, 'w') as txt_file:
+            txt_file.write(contents)
+
+
+
 
 # loop through and add blank noise to original audio files
 for audio_file in os.listdir(audio_folder):
@@ -122,8 +143,13 @@ for audio_file in test_files:
 
 for segmented_train in os.listdir(train_folder):
     create_spectogram(train_folder, segmented_train, mel_train_folder, "train/")
-    create_mfcc(train_folder, segmented_train, mfcc_train_folder)
+    create_mfcc(train_folder, segmented_train, mfcc_train_imgs_folder)
 
 for segmented_test in os.listdir(test_folder):
     create_spectogram(test_folder, segmented_test, mel_test_folder, "test/")
-    create_mfcc(test_folder, segmented_test, mfcc_test_folder)
+    create_mfcc(test_folder, segmented_test, mfcc_test_imgs_folder)
+
+
+# add labels here
+create_labels(mfcc_train_imgs_folder, mfcc_train_lbls_folder)
+create_labels(mfcc_test_imgs_folder, mfcc_test_lbls_folder)
