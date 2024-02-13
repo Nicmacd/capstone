@@ -6,90 +6,68 @@ import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import os
+from dataset import Marine_Mammal_Dataset
+from model import CNN
+from torchinfo import summary
 
-from CNN.model import CNN
-
-mfcc_train_imgs_folder = "./data/mfccData/train/images/"
-mfcc_train_lbls_folder = "./data/mfccData/train/labels/"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)
 
 def train(model, train_loader, criterion, optimizer, epoch, num_batch):
+    model.train()
+    loss_array = np.zeros(epochs)
     for epoch in range(0, epochs):
-        print("epoch", epochs)
-
+        print("epoch", epoch)
+        loss_sum = 0
         for batch in range(0, num_batch):
-
             for inputs, labels in train_loader:
-                outputs = model.forward(inputs)
-                loss = criterion(outputs, labels)
 
-                # Backward pass: compute gradient of the loss with respect to model parameters
-                optimizer.zero_grad()
-                loss.backward()
+                inputs =  inputs.to(device)
+                labels =  labels.to(device)
+                with torch.set_grad_enabled(True):
 
-                optimizer.step()
+                    outputs = model.forward(inputs)
+                    loss = criterion(outputs, labels)
+
+                    # Backward pass: compute gradient of the loss with respect to model parameters
+                    optimizer.zero_grad()
+                    loss.backward()
+
+                    optimizer.step()
 
                 print('Batch Loss:', loss.item())
+                loss_numpy = loss.cpu().detach().numpy()
+                loss_sum = loss_sum + loss_numpy
+            loss_array[epoch] = loss_sum
 
-            # Plot the batch loss after each iteration
-            plt.figure(figsize=(8, 5))
-            plt.plot(loss, label='Batch Loss')
-            plt.xlabel('epoch')
-            plt.ylabel('loss')
-            plt.title(f'Training Batch Loss ')
-            plt.legend()
-            plt.show()
-
-# Define your dataset class
-class CustomDataset(torch.utils.data.Dataset):
-    def __init__(self, images_folder, labels_folder, transform=None):
-        self.images_folder = mfcc_train_imgs_folder
-        self.labels_folder = mfcc_train_lbls_folder
-        self.transform = transform
-        self.image_filenames = os.listdir(mfcc_train_imgs_folder)
-        self.label_filenames = os.listdir(mfcc_train_lbls_folder)
-
-    def __len__(self):
-        return len(self.image_filenames)
-
-    def __getitem__(self, idx):
-        image_path = os.path.join(self.images_folder, self.image_filenames[idx])
-        label_path = os.path.join(self.labels_folder, self.label_filenames[idx])
-
-        # Load image
-        image = Image.open(image_path).convert('RGB')
-
-        # Apply transformations if specified
-        if self.transform:
-            image = self.transform(image)
-
-        # Read label from corresponding text file
-        with open(label_path, 'r') as file:
-            label = int(file.read().strip())
-
-        return image, label
-
+    # Plot the batch loss after each iteration
+    plt.figure(figsize=(8, 5))
+    plt.plot(loss_array, label='Batch Loss')
+    plt.xlabel('epoch')
+    plt.ylabel('loss')
+    plt.title(f'Training Batch Loss ')
+    plt.legend()
+    plt.show()
 
 # Example data and targets
-data_train = "data/mfccData/train/images"
-data_train_labels = "data/mfccData/train/labels"
+data_train = "../data/mfccData/train/"
 
 # Define transformations if needed
 transform = transforms.Compose([transforms.ToTensor()])  # Example transformation
 
 # Create a dataset
-dataset_train = CustomDataset(data_train, data_train_labels, transform=transform)
-
-dataset = dataset_train.transform
-
+dataset_train = Marine_Mammal_Dataset(data_train)
 epochs = 10
 batch_size = 16
-num_batch = int(len(dataset) / batch_size)
+num_batch = int(len(dataset_train) / batch_size)
 
 # Create DataLoader for training and testing sets
-train_loader = DataLoader(dataset_train, data_train_labels, batch_size=batch_size, shuffle=True)
+train_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
 
 # instantiations
-model = CNN.model()
+model = CNN(dataset_train[0][0].shape)
+model = model.to(device)
+
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
