@@ -9,8 +9,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 import shutil
+import concurrent.futures
+import threading
 
-initialize = True
+initialize = False
+count = 1
 
 def make_directories(dir_name):
     os.mkdir(dir_name)
@@ -57,6 +60,8 @@ mel_test_folder = "./data/melData/test/"
 # cutnoisyFolderPath = "./data/audioData/cutFiles/"
 # filePath = "C:/Users/conbo/PycharmProjects/capstone/capstone/audioData/watkinsSpottedSeal/1971/SpottedSeal_0006.wav"
 
+print_lock = threading.Lock()
+
 def segmentAudio(input_file, output_folder, file_name, segment_length = 2000):
     # read the input audio wav file
     audio = AudioSegment.from_file(f'{audio_folder}/{input_file}', format="wav")
@@ -65,7 +70,8 @@ def segmentAudio(input_file, output_folder, file_name, segment_length = 2000):
     num_segments = len(audio) // segment_length
 
     if num_segments == 0:
-        raise ValueError("ERROR: Audio file is smaller that desired segment")
+        with print_lock:
+            raise ValueError("Audio file is smaller that desired segment")
 
     # Create the output folder if it doesn't exist
     if not os.path.exists(output_folder):
@@ -88,15 +94,17 @@ def create_spectogram(folderPath, audioFile, destination_path, data_type):
 
     plt.pcolormesh(times, frequencies, spectrogram)
     plt.imshow(spectrogram)
-    plt.ylabel('Frequency [Hz]')
-    plt.xlabel('Time [msec]')
+    # plt.ylabel('Frequency [Hz]')
+    # plt.xlabel('Time [msec]')
 
     (file_name, file_type) = audioFile.split(".")
 
     plt.axis('off')
     plt.tight_layout()
     plt.savefig(spectoFolderPath + data_type + file_name + '_spectogram.png', bbox_inches='tight', pad_inches=0.1)
-    plt.show()
+    # plt.show()
+    plt.close()
+
 
 def create_labels(data_dir, label_dir):
 
@@ -112,18 +120,43 @@ def create_labels(data_dir, label_dir):
 
 
 
-
-# loop through and add blank noise to original audio files
-for audio_file in os.listdir(audio_folder):
-    # naming convention animalType_000#.wav
-    file_name, type = audio_file.split(".")
-    animal_type, audio_number = audio_file.split("_")
-
+def process_audio(audio_file, output_folder, file_name):
     try:
-        segmentAudio(audio_file, segmented_folder, file_name)
-        print("Audio file successfully split into 2-second segments.")
+        segmentAudio(audio_file, output_folder, file_name)
+        with print_lock:
+            print(f"Audio file {audio_file} successfully split into 2-second segments.")
     except ValueError as e:
-        print(f"Error: {e}")
+        with print_lock:
+            print(f"ERROR processing {audio_file}: {e}")
+
+# loop through and add blank noise to original audio files using threads
+with concurrent.futures.ThreadPoolExecutor() as executor:
+    futures = []
+    for audio_file in os.listdir(audio_folder):
+        with print_lock:
+            print("Current Img: ", count)
+        count = count + 1
+        file_name, _ = os.path.splitext(audio_file)
+        future = executor.submit(process_audio, audio_file, segmented_folder, file_name)
+        futures.append(future)
+
+    # Wait for all threads to finish
+    concurrent.futures.wait(futures)
+
+
+# # loop through and add blank noise to original audio files
+# for audio_file in os.listdir(audio_folder):
+#     # naming convention animalType_000#.wav
+#     print("Current Img: ", count, "/", len(audio_folder))
+#     count = count + 1
+#     file_name, type = audio_file.split(".")
+#     animal_type, audio_number = audio_file.split("_")
+#
+#     try:
+#         segmentAudio(audio_file, segmented_folder, file_name)
+#         print("Audio file successfully split into 2-second segments.")
+#     except ValueError as e:
+#         print(f"Error: {e}")
 
 wav_files = [file for file in os.listdir(segmented_folder)]
 
@@ -148,7 +181,6 @@ for segmented_train in os.listdir(train_folder):
 for segmented_test in os.listdir(test_folder):
     create_spectogram(test_folder, segmented_test, mel_test_folder, "test/")
     create_mfcc(test_folder, segmented_test, mfcc_test_imgs_folder)
-
 
 # add labels here
 create_labels(mfcc_train_imgs_folder, mfcc_train_lbls_folder)
