@@ -42,7 +42,7 @@ if initialize:
     make_directories("data/melData/validate")
     make_directories("data/melData/train")
 
-audio_folder = "./watkinsSpottedSeal/1971/"
+audio_folder = "../Data/DolphinAudio"
 # audio_folder = "orca"
 segmented_folder = "./data/audioData/segmentedFiles/"
 spectoFolderPath = "./data/spectogramData/"
@@ -174,11 +174,17 @@ for audio_file in test_files:
     dest_path = os.path.join(test_folder, audio_file)
     shutil.copy(src_path, dest_path)  # Use shutil.move if you want to move instead of copy
 
+train_count = 0 
 for segmented_train in os.listdir(train_folder):
+    print("train#: " + str(train_count))
+    train_count = train_count + 1 
     create_spectogram(train_folder, segmented_train, mel_train_folder, "train/")
     create_mfcc(train_folder, segmented_train, mfcc_train_imgs_folder)
 
+test_count = 0 
 for segmented_test in os.listdir(test_folder):
+    print("test#: " + str(test_count))
+    test_count = test_count + 1 
     create_spectogram(test_folder, segmented_test, mel_test_folder, "test/")
     create_mfcc(test_folder, segmented_test, mfcc_test_imgs_folder)
 

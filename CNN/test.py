@@ -14,18 +14,20 @@ from torchinfo import summary
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Example data and targets
-data_test = "../data/mfccData/test/"
+data_test = "../data/melData/test/"
 model_path = "./model.pth"
 
 # Create the dataset
 dataset_test = Marine_Mammal_Dataset(data_test)
-
 
 # instantiations
 model = CNN(dataset_test[0][0].shape)
 model.load_state_dict(torch.load(model_path))
 model = model.to(device)
 model.eval()
+
+dolphins = 0
+whales = 0 
 
 Tp = 0
 Fp = 0
@@ -38,6 +40,7 @@ for idx in range(len(dataset_test)):
     input = input.to(device)
     output = model(input)[0]
     value, indices = torch.max(output, 0)
+    
     # TP
     if ((indices == 1) and (dataset_test[idx][1][1] == 1.)):
         Tp = Tp + 1

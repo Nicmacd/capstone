@@ -45,11 +45,11 @@ def download_files(common_names, years, base_folder_name):
                     print(f'{url} generated an exception: {exc}')
 
 # Dolphins
-# common_names = ['BD15F', 'BD19D', 'BG2A', 'BD15B', 'BD1A', 'BD3B', 'BD6H', 'BD5A', 'BD4A', 'BD1C', 'BD12A', 'BD3A',
-#                 'BD15A', 'BD17A', 'BD15L', 'BD15C', 'BD12B', 'BD6B', 'BD6A']  # List of common names to iterate over
+#common_names = ['BD15F', 'BD19D', 'BG2A', 'BD15B', 'BD1A', 'BD3B', 'BD6H', 'BD5A', 'BD4A', 'BD1C', 'BD12A', 'BD3A',
+ #                'BD15A', 'BD17A', 'BD15L', 'BD15C', 'BD12B', 'BD6B', 'BD6A']  # List of common names to iterate over
 common_names = ['BE7A'] #Orca
 years = [51, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 68, 69, 70, 71, 72, 75, 78, 79,
          81, 83, 84, 85, 87, 89, 90, 91, 92, 93, 94, 97]
-base_folder_name = 'orca1'
+base_folder_name = 'orca'
 
 download_files(common_names, years, base_folder_name)

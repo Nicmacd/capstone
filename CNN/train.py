@@ -40,6 +40,10 @@ def train(model, train_loader, criterion, optimizer, epochs, num_batch):
             loss_sum = loss_sum + loss_numpy
         loss_array[epoch] = loss_sum
 
+        if(epoch % 100 == 0):
+            path = str("./model_") + str(epoch) + str(".pth")
+            torch.save(model.state_dict(), path)
+
     # Plot the batch loss after each iteration
     plt.figure(figsize=(8, 5))
     plt.plot(loss_array, label='Batch Loss')
@@ -47,10 +51,11 @@ def train(model, train_loader, criterion, optimizer, epochs, num_batch):
     plt.ylabel('loss')
     plt.title(f'Training Batch Loss ')
     plt.legend()
+    plt.savefig("./loss.png")
     plt.show()
 
 # Example data and targets
-data_train = "../data/mfccData/train/"
+data_train = "../data/melData/train/"
 model_path = "./model.pth"
 
 # Define transformations if needed
@@ -58,7 +63,7 @@ transform = transforms.Compose([transforms.ToTensor()])  # Example transformatio
 
 # Create a dataset
 dataset_train = Marine_Mammal_Dataset(data_train)
-epochs = 5
+epochs = 100
 batch_size = 32
 num_batch = int(len(dataset_train) / batch_size)
 
@@ -69,8 +74,8 @@ train_loader = DataLoader(dataset_train, batch_size=batch_size, shuffle=True)
 model = CNN(dataset_train[0][0].shape)
 model = model.to(device)
 
-criterion = nn.MSELoss() #Should probably use some type of weighted cross entropy here due to classification task with class imbalance
-optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+criterion = nn.CrossEntropyLoss() #Should probably use some type of weighted cross entropy here due to classification task with class imbalance
+optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
 
 train(model, train_loader, criterion, optimizer, epochs, num_batch)
 torch.save(model.state_dict(), model_path)
