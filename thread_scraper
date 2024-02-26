@@ -3,53 +3,128 @@ from bs4 import BeautifulSoup
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-def download_file(session, download_url, folder_name, file_name):
+# Mapping of common names to their corresponding animal names
+# List of common names to iterate over
+# TODO: change here
+# common_names = ['BE7A'] #Orca
+common_names = ['BD15F', 'BD19D', 'BG2A', 'BD15B', 'BD1A', 'BD3B', 'BD6H', 'BD5A', 'BD4A', 'BD1C', 'BD12A', 'BD3A',
+                'BD15A', 'BD17A', 'BD15L', 'BD15C', 'BD12B', 'BD6B', 'BD6A']  # Dolphins
+# common_names = ['CC2A', 'CC3A', 'CC12V', 'CC12G', 'CC1A', 'CA1P', 'CC4A', 'CA1F', 'CC12F', 'CC12H', 'CC14A', 'CC12L',
+#                 'CC5A'] #Seal
+# common_names = ['CC5A', 'AC1E', 'AA1A', 'BE9A', 'AC1F', 'AB1A', 'AC2A', 'BE3C', 'BD10A', 'AC1A', 'AC1A', 'BE3D',
+#                 'AA3B', 'BA2A'] #Whale
+
+# TODO: change here
+# common_name_map = {
+#     'BE7A': 'Orca'
+# }#Orca
+common_name_map = {
+    'BD15F': 'AtlanticSpottedDolphin',
+    'BD19D': 'BotlenoseDolphin',
+    'BG2A': 'AmazonRiverDolphin',
+    'BD15B': 'ClymeneDolphin',
+    'BD1A': 'CommersonsDolphin',
+    'BD3B': 'CommonDolphin',
+    'BD6H': 'DuskyDolphin',
+    'BD5A': 'FrasersDolphin',
+    'BD4A': 'GrampusDolphin',
+    'BD1C': 'HeavesidesDolphin',
+    'BD12A': 'IrawaddyDolphin',
+    'BD3A': 'PacificCommonDolphin',
+    'BD15A': 'PantropicalSpottedDolphin',
+    'BD17A': 'RoughToothed',
+    'BD15L': 'SpinnerDolphin',
+    'BD15C': 'StrippedDolphin',
+    'BD12B': 'TucixiDolphin',
+    'BD6B': 'WhiteBeakedDolphin',
+    'BD6A': 'WhiteSidedDolphin'
+}  # Dolphins
+#
+# common_name_map = {
+#     'CC2A': 'BeardedSeal',
+#     'CC3A': 'GraySeal',
+#     'CC12V': 'HarbourSeal',
+#     'CC12G': 'HarpSeal',
+#     'CC1A': 'HoodedSeal',
+#     'CA1P': 'JuanFernandezFurSeal',
+#     'CC4A': 'LeopardSeal',
+#     'CA1F': 'NewZealandFurSeal',
+#     'CC12F': 'RibbonSeal',
+#     'CC12H': 'RingedSeal',
+#     'CC14A': 'RossSeal',
+#     'CC12L': 'SpottedSeal',
+#     'CC5A': 'WeddellSeal',
+# }#Seals
+#
+# common_name_map = {
+#     'BB1A': 'BelugaWhiteWhale',
+#     'AC1E': 'BlueWhale',
+#     'AA1A': 'BowheadWhale',
+#     'BE9A': 'FalseKillerWhale',
+#     'AC1F': 'FinFinbackWhale',
+#     'AB1A': 'GrayWhale',
+#     'AC2A': 'HumpbackWhale',
+#     'BE3C': 'LongFinnedPilotWhale',
+#     'BD10A': 'MelonHeadedWhale',
+#     'AC1A': 'MinkeWhale',
+#     'AA3A': 'NorthernRightWhale',
+#     'BE3D': 'ShortFinnedPilotWhale',
+#     'AA3B': 'SouthernRightWhale',
+#     'BA2A': 'SpermWhale'
+# }#Whales
+
+def download_file(session, download_url, folder_path, file_name):
     with session.get(download_url, stream=True) as r:
         r.raise_for_status()
-        with open(file_name, 'wb') as f:
+        with open(os.path.join(folder_path, file_name), 'wb') as f:
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
     print(f'Downloaded {file_name}')
 
-def download_files(common_names, years, base_folder_name):
+def download_files(common_names, years, species):
+    base_folder_name = species
     if not os.path.exists(base_folder_name):
         os.makedirs(base_folder_name)
 
-    with requests.Session() as session:
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_url = {}
-            counter = 1
+    with requests.Session() as session, ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_url = {}
+        counter = 1
 
-            for common_name in common_names:
-                for year in years:
-                    url = f'https://whoicf2.whoi.edu/science/B/whalesounds/fullCuts.cfm?SP={common_name}&YR={year}'
-                    response = session.get(url)
-                    soup = BeautifulSoup(response.content, 'html.parser')
-                    links = soup.find_all('a', text='Download')
+        for common_name in common_names:
+            animal_name = common_name_map.get(common_name, "Unknown")
+            species_folder = os.path.join(base_folder_name, animal_name.replace(' ', '_'))
+            if not os.path.exists(species_folder):
+                os.makedirs(species_folder)
 
-                    for link in links:
-                        partial_url = link.get('href')
-                        download_url = f'https://whoicf2.whoi.edu/{partial_url}'
-                        # Include common name in file name for differentiation
-                        # file_name = os.path.join(base_folder_name, f"{base_folder_name}_{counter:03d}_{common_name}_{year}.wav")
-                        file_name = os.path.join(base_folder_name, f"{base_folder_name}_{counter:03d}.wav")
-                        future = executor.submit(download_file, session, download_url, base_folder_name, file_name)
-                        future_to_url[future] = download_url
-                        counter += 1
+            for year in years:
+                url = f'https://whoicf2.whoi.edu/science/B/whalesounds/fullCuts.cfm?SP={common_name}&YR={year}'
+                response = session.get(url)
+                soup = BeautifulSoup(response.content, 'html.parser')
+                links = soup.find_all('a', text='Download')
 
-            for future in as_completed(future_to_url):
-                url = future_to_url[future]
-                try:
-                    future.result()
-                except Exception as exc:
-                    print(f'{url} generated an exception: {exc}')
+                for link in links:
+                    partial_url = link.get('href')
+                    download_url = f'https://whoicf2.whoi.edu/{partial_url}'
+                    file_name = f"{species}_{common_name}_{counter:03d}.wav"
+                    future = executor.submit(download_file, session, download_url, species_folder, file_name)
+                    future_to_url[future] = download_url
+                    counter += 1
 
-# Dolphins
-#common_names = ['BD15F', 'BD19D', 'BG2A', 'BD15B', 'BD1A', 'BD3B', 'BD6H', 'BD5A', 'BD4A', 'BD1C', 'BD12A', 'BD3A',
- #                'BD15A', 'BD17A', 'BD15L', 'BD15C', 'BD12B', 'BD6B', 'BD6A']  # List of common names to iterate over
-common_names = ['BE7A'] #Orca
-years = [51, 56, 57, 58, 59, 60, 61, 62, 63, 64, 66, 68, 69, 70, 71, 72, 75, 78, 79,
-         81, 83, 84, 85, 87, 89, 90, 91, 92, 93, 94, 97]
-base_folder_name = 'orca'
+        for future in as_completed(future_to_url):
+            url = future_to_url[future]
+            try:
+                future.result()
+            except Exception as exc:
+                print(f'{url} generated an exception: {exc}')
 
-download_files(common_names, years, base_folder_name)
+# Sample usage
+years = [51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
+         80, 81, 82, 83, 84, 85, 86, 87, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
+
+# TODO: change here
+# species = 'orca'  # Update this based on your actual species of interest
+species = 'dolphin'
+# species = 'seal'
+# species = 'whale'
+
+download_files(common_names, years, species)
