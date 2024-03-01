@@ -12,7 +12,7 @@ import shutil
 import concurrent.futures
 import threading
 
-initialize = False
+initialize = True
 count = 1
 
 def make_directories(dir_name):
@@ -42,7 +42,7 @@ if initialize:
     make_directories("data/melData/validate")
     make_directories("data/melData/train")
 
-audio_folder = "../Data/DolphinAudio"
+audio_folder = "../Data/"
 # audio_folder = "orca"
 segmented_folder = "./data/audioData/segmentedFiles/"
 spectoFolderPath = "./data/spectogramData/"
@@ -132,17 +132,18 @@ def process_audio(audio_file, output_folder, file_name):
 # loop through and add blank noise to original audio files using threads
 with concurrent.futures.ThreadPoolExecutor() as executor:
     futures = []
-    for audio_file in os.listdir(audio_folder):
-        with print_lock:
-            print("Current Img: ", count)
-        count = count + 1
-        file_name, _ = os.path.splitext(audio_file)
-        future = executor.submit(process_audio, audio_file, segmented_folder, file_name)
-        futures.append(future)
+    for root, _, files in os.walk(audio_folder):
+        for audio_file in files:
+            with print_lock:
+                print("Current Img: " + audio_file  + " |#" + str(count) + " Proccessed")
+            count += 1
+            file_name, _ = os.path.splitext(audio_file)
+            audio_path = os.path.join(root, audio_file)
+            future = executor.submit(process_audio, audio_path, segmented_folder, file_name)
+            futures.append(future)
 
     # Wait for all threads to finish
     concurrent.futures.wait(futures)
-
 
 # # loop through and add blank noise to original audio files
 # for audio_file in os.listdir(audio_folder):

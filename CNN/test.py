@@ -14,7 +14,7 @@ from torchinfo import summary
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # Example data and targets
-data_test = "../data/melData/test/"
+data_test = "../data/mfccData/test/images"
 model_path = "./model.pth"
 
 # Create the dataset
@@ -26,8 +26,6 @@ model.load_state_dict(torch.load(model_path))
 model = model.to(device)
 model.eval()
 
-dolphins = 0
-whales = 0 
 
 Tp = 0
 Fp = 0
@@ -41,6 +39,7 @@ for idx in range(len(dataset_test)):
     output = model(input)[0]
     value, indices = torch.max(output, 0)
     
+    '''
     # TP
     if ((indices == 1) and (dataset_test[idx][1][1] == 1.)):
         Tp = Tp + 1
@@ -55,6 +54,7 @@ for idx in range(len(dataset_test)):
     # TN
     if ((indices == 0) and (dataset_test[idx][1][1] == 0.)):
         Tn = Tn + 1
+    '''
 
     if (dataset_test[idx][1][indices] == 1.):
         correct = correct + 1
