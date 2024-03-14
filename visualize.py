@@ -1,12 +1,19 @@
-#import librosa, librosa.display
+import librosa, librosa.display
+from pydub import AudioSegment
 from visualize_mel import plot_spectrogram
+from visualize_mfcc import create_mfcc
 from scipy.io import wavfile
 import scipy.signal as signal
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+import shutil
+import concurrent.futures
+import threading
 
-initialize = False
+initialize = True
+count = 1
 
 def make_directories(dir_name):
     os.mkdir(dir_name)
@@ -17,100 +24,171 @@ if initialize:
     make_directories("data/spectogramData/test")
     make_directories("data/spectogramData/validate")
     make_directories("data/spectogramData/train")
+    make_directories("data/mfccData")
+    make_directories("data/mfccData/test")
+    make_directories("data/mfccData/validate")
+    make_directories("data/mfccData/train")
+    make_directories("data/mfccData/test/images")
+    make_directories("data/mfccData/test/labels")
+    make_directories("data/mfccData/train/images")
+    make_directories("data/mfccData/train/labels")
     make_directories("data/audioData")
-    make_directories("data/audioData/addedNoise")
-    make_directories("data/audioData/cutFiles")
+    make_directories("data/audioData/segmentedFiles")
     make_directories("data/audioData/test")
     make_directories("data/audioData/validate")
     make_directories("data/audioData/train")
+    make_directories("data/melData")
+    make_directories("data/melData/test")
+    make_directories("data/melData/validate")
+    make_directories("data/melData/train")
 
-audioFolderPath = "./watkinsSpottedSeal/1971/"
-spectoFolderPath ="./data/spectogramData/"
-noisyFolderPath ="./data/audioData/addedNoise/"
-cutnoisyFolderPath = "./data/audioData/cutFiles/"
-# filePath = "C:/Users/conbo/PycharmProjects/capstone/capstone/audioData/watkinsSpottedSeal/1971/71012016.wav"
+audio_folder = "../Data/"
+# audio_folder = "orca"
+segmented_folder = "./data/audioData/segmentedFiles/"
+spectoFolderPath = "./data/spectogramData/"
+train_folder = "./data/audioData/train/"
+test_folder = "./data/audioData/test/"
+mfcc_folder = "./data/mfccData/"
+mfcc_train_imgs_folder = "./data/mfccData/train/images/"
+mfcc_train_lbls_folder = "./data/mfccData/train/labels/"
+mfcc_test_imgs_folder = "./data/mfccData/test/images/"
+mfcc_test_lbls_folder = "./data/mfccData/test/labels/"
+mel_train_folder = "./data/melData/train/"
+mel_test_folder = "./data/melData/test/"
 
-# add noise to the .wav audio files
-def addBlankNoise(inputFile, outputFile, noise_level = 0, windowSize = 5.0):
-    # Read the input wav file
-    sample_rate, data = wavfile.read(inputFile)
-    # Generate random noise
-    # length = len(data)
-    length = int((windowSize/2)*sample_rate) # 5 seconds I am not sure I am confused about the units
-    ###I think that length is just the number of samples, so time elapsed would be length/sample rate, 2.5 seconds will be 2.5 * SR
-    ###Are we sure that we want noise vs just adding silence?
-    noise = np.random.normal(0, noise_level, length)
-    # Add noise to the original data
-    noisyData = np.concatenate((noise, data, noise))
-    # Ensure the data is within the valid range for a 16-bit PCM wav file
-    noisyData = np.clip(noisyData, -32767, 32767)
+# noisyFolderPath ="./data/audioData/addedNoise/"
+# cutnoisyFolderPath = "./data/audioData/cutFiles/"
+# filePath = "C:/Users/conbo/PycharmProjects/capstone/capstone/audioData/watkinsSpottedSeal/1971/SpottedSeal_0006.wav"
 
-    #working on trying to find the peak noise value
-    peakAmplitude = noisyData.max()
-    peakIndex = np.where(noisyData == peakAmplitude)[0]
+print_lock = threading.Lock()
 
-    # Get the sample index of the maximum peak
-    #peakSample = noisyData[peakIndex]
+def segmentAudio(input_file, output_folder, file_name, segment_length = 2000):
+    # read the input audio wav file
+    audio = AudioSegment.from_file(f'{audio_folder}/{input_file}', format="wav")
 
-    # Set the window size around the peak (in seconds)
-    halfWindow = windowSize / 2
+    # Calculate the number of segments
+    num_segments = len(audio) // segment_length
 
-    # need to figure out timing unit here
-    # not sure about the sampling rate need to figure out what that is actually
-    # Idea is:
-    # start index ... 2.5 sec ... max audio recording ... 2.5 sec ... end index
-    # getting negative number from the starting index maybe not enough time is being added
+    if num_segments == 0:
+        with print_lock:
+            raise ValueError("Audio file is smaller that desired segment")
 
-    ###Sample rate is like how much time goes by in between each value in the audio file, so it looks good below
-    ###Difference in indexes would be seconds*sample rate, eg if the SR is two samples a second 2.5 seconds of audio would be 5 samples
+    # Create the output folder if it doesn't exist
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
 
-    difference = int(sample_rate * halfWindow)
-    startIndex = int(peakIndex - difference)
-    endIndex = int(peakIndex + difference)
+    # Split the audio into segments and save each segment
+    # starts at 0 for i
+    for i in range(num_segments):
+        start_time = i * segment_length
+        end_time = (i + 1) * segment_length
+        segment = audio[start_time:end_time]
+        segment.export(os.path.join(output_folder, file_name + f"_{i + 1:04d}.wav"), format="wav")
 
-    # Cut the audio around the peak
-    cut_audio = noisyData[startIndex:endIndex]
-
-    # Save the cut audio to a new file
-    output_file = 'cut_audio_around_peak.wav'
-    wavfile.write(cutnoisyFolderPath + outputFile + output_file, sample_rate, cut_audio.astype(np.int16))
-
-    # Save the noisy data to a new wav file
-    wavfile.write(noisyFolderPath + outputFile, sample_rate, noisyData.astype(np.int16))
-
-
-# loop through and add blank noise to original audio files
-for audioFile in os.listdir(audioFolderPath):
-    addBlankNoise(audioFolderPath + audioFile, "noiseAdded" + audioFile, 0)
-
-# loop through and create and save spectrogram for each audio file
-for noisyAudioFile in os.listdir(noisyFolderPath):
-    sample_rate, samples = wavfile.read(noisyFolderPath + noisyAudioFile)
+def create_spectogram(folderPath, audioFile, destination_path, data_type):
+    sample_rate, samples = wavfile.read(folderPath + audioFile)
     frequencies, times, spectrogram = signal.spectrogram(samples, sample_rate)
     ###Plot as Mel Spectrogram, uses Librosa Module
-    ###libSignal, sr = librosa.load(noisyFolderPath + noisyAudioFile)
-    ###plot_spectrogram(libSignal, sr)
+    libSignal, sr = librosa.load(folderPath + audioFile)
+    plot_spectrogram(destination_path, audioFile, libSignal, sr)
 
     plt.pcolormesh(times, frequencies, spectrogram)
     plt.imshow(spectrogram)
-    plt.ylabel('Frequency [Hz]')
-    plt.xlabel('Time [msec]')
+    # plt.ylabel('Frequency [Hz]')
+    # plt.xlabel('Time [msec]')
 
-    (file_name, file_type) = noisyAudioFile.split(".")
+    (file_name, file_type) = audioFile.split(".")
 
-    plt.savefig(spectoFolderPath + file_name + '_spectogram.png')
-    plt.show()
+    plt.axis('off')
+    plt.tight_layout()
+    plt.savefig(spectoFolderPath + data_type + file_name + '_spectogram.png', bbox_inches='tight', pad_inches=0.1)
+    # plt.show()
+    plt.close()
 
-for cutnoisyAudioFile in os.listdir(cutnoisyFolderPath):
-    sample_rate, samples = wavfile.read(cutnoisyFolderPath + cutnoisyAudioFile)
-    frequencies, times, spectrogram = signal.spectrogram(samples, sample_rate)
 
-    plt.pcolormesh(times, frequencies, spectrogram)
-    plt.imshow(spectrogram)
-    plt.ylabel('Frequency [Hz]')
-    plt.xlabel('Time [msec]')
+def create_labels(data_dir, label_dir):
 
-    (file_name, other_name, file_type) = cutnoisyAudioFile.split(".")
+    for name in os.listdir(data_dir):
+        name.split(".", 1)
+        #txtfile_name = os.path.splitext(file_name)[0]
+        txtfile = os.path.join(label_dir, name + '.txt')
 
-    plt.savefig(spectoFolderPath + file_name + '_cut_spectogram.png')
-    plt.show()
+        contents, excess = name.split("_", 1)
+
+        with open(txtfile, 'w') as txt_file:
+            txt_file.write(contents)
+
+
+
+def process_audio(audio_file, output_folder, file_name):
+    try:
+        segmentAudio(audio_file, output_folder, file_name)
+        with print_lock:
+            print(f"Audio file {audio_file} successfully split into 2-second segments.")
+    except ValueError as e:
+        with print_lock:
+            print(f"ERROR processing {audio_file}: {e}")
+
+# loop through and add blank noise to original audio files using threads
+with concurrent.futures.ThreadPoolExecutor() as executor:
+    futures = []
+    for root, _, files in os.walk(audio_folder):
+        for audio_file in files:
+            with print_lock:
+                print("Current Img: " + audio_file  + " |#" + str(count) + " Proccessed")
+            count += 1
+            file_name, _ = os.path.splitext(audio_file)
+            audio_path = os.path.join(root, audio_file)
+            future = executor.submit(process_audio, audio_path, segmented_folder, file_name)
+            futures.append(future)
+
+    # Wait for all threads to finish
+    concurrent.futures.wait(futures)
+
+# # loop through and add blank noise to original audio files
+# for audio_file in os.listdir(audio_folder):
+#     # naming convention animalType_000#.wav
+#     print("Current Img: ", count, "/", len(audio_folder))
+#     count = count + 1
+#     file_name, type = audio_file.split(".")
+#     animal_type, audio_number = audio_file.split("_")
+#
+#     try:
+#         segmentAudio(audio_file, segmented_folder, file_name)
+#         print("Audio file successfully split into 2-second segments.")
+#     except ValueError as e:
+#         print(f"Error: {e}")
+
+wav_files = [file for file in os.listdir(segmented_folder)]
+
+# split segmented data into train and test sets
+train_files, test_files = train_test_split(wav_files, test_size=0.2, random_state=42)
+
+# Copy the segmented train and test data into their folders
+for audio_file in train_files:
+    src_path = os.path.join(segmented_folder, audio_file)
+    dest_path = os.path.join(train_folder, audio_file)
+    shutil.copy(src_path, dest_path)  # Use shutil.move if you want to move instead of copy
+
+for audio_file in test_files:
+    src_path = os.path.join(segmented_folder, audio_file)
+    dest_path = os.path.join(test_folder, audio_file)
+    shutil.copy(src_path, dest_path)  # Use shutil.move if you want to move instead of copy
+
+train_count = 0 
+for segmented_train in os.listdir(train_folder):
+    print("train#: " + str(train_count))
+    train_count = train_count + 1 
+    create_spectogram(train_folder, segmented_train, mel_train_folder, "train/")
+    create_mfcc(train_folder, segmented_train, mfcc_train_imgs_folder)
+
+test_count = 0 
+for segmented_test in os.listdir(test_folder):
+    print("test#: " + str(test_count))
+    test_count = test_count + 1 
+    create_spectogram(test_folder, segmented_test, mel_test_folder, "test/")
+    create_mfcc(test_folder, segmented_test, mfcc_test_imgs_folder)
+
+# add labels here
+create_labels(mfcc_train_imgs_folder, mfcc_train_lbls_folder)
+create_labels(mfcc_test_imgs_folder, mfcc_test_lbls_folder)
