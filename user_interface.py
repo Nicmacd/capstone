@@ -166,13 +166,13 @@ def open_file():
     create_mfcc(segment_signal, sr)
     # Update visualization_display with the visualization result
     visualization_result = Image.open("./mel.png")
-    resized_img = visualization_result.resize((600,600), Image.ANTIALIAS)
+    resized_img = visualization_result.resize((200,200), Image.LANCZOS)
     img = ImageTk.PhotoImage(resized_img)
     visualization_display.configure(image=img)
     visualization_display.image = img
 
     visualization_result = Image.open("./mfcc.png")
-    resized_img = visualization_result.resize((600,600), Image.ANTIALIAS)
+    resized_img = visualization_result.resize((200,200), Image.LANCZOS)
     img = ImageTk.PhotoImage(resized_img)
     cepstrum_display.configure(image=img)
     cepstrum_display.image = img
@@ -191,7 +191,6 @@ def refresh_file():
     else:
         error_label.config(text="")
 
-    print(file_path)
     signal, sr = librosa.load(file_path)
     file_length = librosa.get_duration(y=signal, sr=sr)
     start_slider.config(to=file_length)
@@ -206,13 +205,13 @@ def refresh_file():
     create_mfcc(segment_signal, sr)
     # Update visualization_display with the visualization result
     visualization_result = Image.open("./mel.png")
-    resized_img = visualization_result.resize((600,600), Image.ANTIALIAS)
+    resized_img = visualization_result.resize((200,200), Image.LANCZOS)
     img = ImageTk.PhotoImage(resized_img)
     visualization_display.configure(image=img)
     visualization_display.image = img
 
     visualization_result = Image.open("./mfcc.png")
-    resized_img = visualization_result.resize((600,600), Image.ANTIALIAS)
+    resized_img = visualization_result.resize((200,200), Image.LANCZOS)
     img = ImageTk.PhotoImage(resized_img)
     cepstrum_display.configure(image=img)
     cepstrum_display.image = img
@@ -232,7 +231,7 @@ def process_segment():
     except:
         error_label.config(text="Failed to load model parameters")
 
-    model.load_state_dict(torch.load(model_path))
+    model.load_state_dict(torch.load(model_path,map_location=torch.device('cpu')))
     input = data[0].unsqueeze(0)
     output = model(input)[0]
     value, indices = torch.max(output, 0)

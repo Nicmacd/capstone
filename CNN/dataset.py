@@ -39,12 +39,8 @@ class Marine_Mammal_Dataset(Dataset):
             image = cv2.imread(img_path, cv2.IMREAD_COLOR)
             image = transform(image)
             self.data.append(image)
- 
-        self.data = torch.stack(self.data)
-        self.labels = torch.stack([self.label_mapping(label) for label in self.labels])
 
-        self.data = self.data.to(torch.device("cuda"))
-        self.labels = self.labels.to(torch.device("cuda"))
+        self.data = torch.stack(self.data)
 
     def __len__(self):
         return len(self.labels)
@@ -58,16 +54,4 @@ class Marine_Mammal_Dataset(Dataset):
         else:
             self.num += 1
             return self.__getitem__(self.num - 1)
-        
-    def label_mapping(self, label):
-        species = label.split("_")[0]
-        if species == "whale":
-            return torch.tensor([1, 0, 0], dtype=torch.float32)
-        elif species == "dolphin":
-            return torch.tensor([0, 1, 0], dtype=torch.float32)
-        elif species == "seal":
-            return torch.tensor([0, 0, 1], dtype=torch.float32)
-        else:
-            print("Label not found")
-            return None
 

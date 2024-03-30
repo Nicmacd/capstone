@@ -26,7 +26,7 @@ class CNN(nn.Module):
         self.dropout = nn.Dropout(0.3)
 
         # Output Layer
-        self.fc2 = nn.Linear(64, 3)
+        self.fc2 = nn.Linear(64, 12)
 
     def forward(self, x):
         x = F.relu(self.conv1(x))
