@@ -6,18 +6,18 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 # Mapping of common names to their corresponding animal names
 # List of common names to iterate over
 # TODO: change here
-# common_names = ['BE7A'] #Orca
+common_names = ['BE7A'] #Orca
 #common_names = ['BD15F', 'BD19D', 'BG2A', 'BD15B', 'BD1A', 'BD3B', 'BD6H', 'BD5A', 'BD4A', 'BD1C', 'BD12A', 'BD3A',
 #               'BD15A', 'BD17A', 'BD15L', 'BD15C', 'BD12B', 'BD6B', 'BD6A']  # Dolphins
 #common_names = ['CC2A', 'CC3A', 'CC12V', 'CC12G', 'CC1A', 'CA1P', 'CC4A', 'CA1F', 'CC12F', 'CC12H', 'CC14A', 'CC12L',
 #                 'CC5A'] #Seal
-common_names = ['CC5A', 'AC1E', 'AA1A', 'BE9A', 'AC1F', 'AB1A', 'AC2A', 'BE3C', 'BD10A', 'AC1A', 'AC1A', 'BE3D',
-                 'AA3B', 'BA2A'] #Whale
+# common_names = ['CC5A', 'AC1E', 'AA1A', 'BE9A', 'AC1F', 'AB1A', 'AC2A', 'BE3C', 'BD10A', 'AC1A', 'AC1A', 'BE3D',
+#                  'AA3B', 'BA2A'] #Whale
 
 # TODO: change here
-# common_name_map = {
-#     'BE7A': 'Orca'
-# }#Orca
+common_name_map = {
+    'BE7A': 'Orca'
+}#Orca
 '''
 common_name_map = {
     'BD15F': 'AtlanticSpottedDolphin',
@@ -73,7 +73,7 @@ common_name_map = {
      'BE3D': 'ShortFinnedPilotWhale',
      'AA3B': 'SouthernRightWhale',
      'BA2A': 'SpermWhale'
- }#Whales
+}#Whales
 
 def download_file(session, download_url, folder_path, file_name):
     with session.get(download_url, stream=True) as r:
@@ -124,9 +124,9 @@ years = [51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68,
          80, 81, 82, 83, 84, 85, 86, 87, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99]
 
 # TODO: change here
-# species = 'orca'  # Update this based on your actual species of interest
+species = 'orca'  # Update this based on your actual species of interest
 #species = 'dolphin'
 # species = 'seal'
-species = 'whale'
+# species = 'whale'
 
 download_files(common_names, years, species)

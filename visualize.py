@@ -12,38 +12,38 @@ import shutil
 import concurrent.futures
 import threading
 
-initialize = True
+initialize = False
 count = 1
 
-def make_directories(dir_name):
-    os.mkdir(dir_name)
+# def make_directories(dir_name):
+#     os.mkdir(dir_name)
 
-if initialize:
-    make_directories("data")
-    make_directories("data/spectogramData")
-    make_directories("data/spectogramData/test")
-    make_directories("data/spectogramData/validate")
-    make_directories("data/spectogramData/train")
-    make_directories("data/mfccData")
-    make_directories("data/mfccData/test")
-    make_directories("data/mfccData/validate")
-    make_directories("data/mfccData/train")
-    make_directories("data/mfccData/test/images")
-    make_directories("data/mfccData/test/labels")
-    make_directories("data/mfccData/train/images")
-    make_directories("data/mfccData/train/labels")
-    make_directories("data/audioData")
-    make_directories("data/audioData/segmentedFiles")
-    make_directories("data/audioData/test")
-    make_directories("data/audioData/validate")
-    make_directories("data/audioData/train")
-    make_directories("data/melData")
-    make_directories("data/melData/test")
-    make_directories("data/melData/validate")
-    make_directories("data/melData/train")
+# if initialize:
+#     make_directories("data")
+#     make_directories("data/spectogramData")
+#     make_directories("data/spectogramData/test")
+#     make_directories("data/spectogramData/validate")
+#     make_directories("data/spectogramData/train")
+#     make_directories("data/mfccData")
+#     make_directories("data/mfccData/test")
+#     make_directories("data/mfccData/validate")
+#     make_directories("data/mfccData/train")
+#     make_directories("data/mfccData/test/images")
+#     make_directories("data/mfccData/test/labels")
+#     make_directories("data/mfccData/train/images")
+#     make_directories("data/mfccData/train/labels")
+#     make_directories("data/audioData")
+#     make_directories("data/audioData/segmentedFiles")
+#     make_directories("data/audioData/test")
+#     make_directories("data/audioData/validate")
+#     make_directories("data/audioData/train")
+#     make_directories("data/melData")
+#     make_directories("data/melData/test")
+#     make_directories("data/melData/validate")
+#     make_directories("data/melData/train")
 
-audio_folder = "../Data/"
-# audio_folder = "orca"
+# audio_folder = "../Data/"
+audio_folder = "./orca/Unknown/"
 segmented_folder = "./data/audioData/segmentedFiles/"
 spectoFolderPath = "./data/spectogramData/"
 train_folder = "./data/audioData/train/"
@@ -65,7 +65,6 @@ print_lock = threading.Lock()
 def segmentAudio(input_file, output_folder, file_name, segment_length = 2000):
     # read the input audio wav file
     audio = AudioSegment.from_file(f'{audio_folder}/{input_file}', format="wav")
-
     # Calculate the number of segments
     num_segments = len(audio) // segment_length
 
@@ -117,8 +116,6 @@ def create_labels(data_dir, label_dir):
 
         with open(txtfile, 'w') as txt_file:
             txt_file.write(contents)
-
-
 
 def process_audio(audio_file, output_folder, file_name):
     try:
